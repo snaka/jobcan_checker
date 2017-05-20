@@ -1,0 +1,21 @@
+{
+  "manifest_version": 2,
+  "name": "Jobcan checker",
+  "version": "0.1",
+  "description": "Observe Jobcan status",
+  "icons": { "48": "images/icon.png" },
+  "browser_action": {
+    "default_icon": "images/icon.png",
+    "default_title": "Jobcanチェッカー"
+  },
+  "background": {
+    "scripts": ["lib/jquery-3.2.1.min.js", "background.js"],
+    "persistent": false
+  },
+  "permissions": [
+    "alarms",
+    "notifications",
+    "tabs",
+    "https://ssl.jobcan.jp/"
+  ]
+}
