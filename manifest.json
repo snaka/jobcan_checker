@@ -17,5 +17,9 @@
     "notifications",
     "tabs",
     "https://ssl.jobcan.jp/"
-  ]
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "chrome_style": true
+  }
 }
