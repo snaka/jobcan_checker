@@ -1,6 +1,4 @@
 (function ($) {
-  var jobcan_login_url = "https://ssl.jobcan.jp/login/pc-employee";
-
   function loadJobcanPage() {
     console.log("loadJobcanPage");
 
@@ -25,6 +23,8 @@
         console.log(statusName + ":" + statusCount);
         statuses.push({ title: statusName, count: statusCount });
       });
+      // for test
+      // statuses = [{title: "status1", count: 1}];
       dInner.resolve(statuses);
     });
 
@@ -53,9 +53,13 @@
         type: "basic",
         iconUrl: "images/icon.png",
         title: "ジョブカンエラー状況",
-        message: notificationMessage
+        message: notificationMessage,
+        buttons: [{ title: "ジョブカンを開く" }]
       }
     );
+    chrome.notifications.onButtonClicked.addListener(function() {
+      openJobcanPage();
+    });
   }
 
   /*
@@ -73,24 +77,53 @@
     );
     chrome.notifications.onButtonClicked.addListener(function() {
       chrome.notifications.clear("jobcanChecker.showError");
-      chrome.tabs.create({ url: "https://ssl.jobcan.jp/employee" });
+      openJobcanPage();
     });
   }
 
+  function openJobcanPage() {
+    chrome.tabs.create({ url: "https://ssl.jobcan.jp/employee" });
+  }
+
+  /*
+   * バッジの更新
+   */
   function updateBadge(data) {
     var totalCount = 0;
     for (var status of data) {
       totalCount = totalCount + status.count;
     }
-    chrome.browserAction.setBadgeText({ text: totalCount.toString() });
-
-    var bgColor = "#aaaaaa";
     if (totalCount > 0) {
-      bgColor = "#ff0000";
+      chrome.browserAction.setBadgeText({ text: totalCount.toString() });
+      chrome.browserAction.setBadgeBackgroundColor({ color: "#ff0000" });
     }
-    chrome.browserAction.setBadgeBackgroundColor({ color: bgColor });
+    else {
+      // 0 の場合はバッジを消す
+      chrome.browserAction.setBadgeText({ text: "" });
+    }
   }
 
+  function showErrorBadge() {
+    chrome.browserAction.setBadgeText({ text: "?" });
+    chrome.browserAction.setBadgeBackgroundColor({ color: "#aaaaaa" });
+  }
+
+  /*
+   * 通知なしでチェック
+   */
+  function checkSilently() {
+    loadJobcanPage()
+    .done(function(data) {
+      updateBadge(data);
+    })
+    .fail(function(message) {
+      showErrorBadge();
+    });
+  }
+
+  /*
+   * 強制的にチェック（通知あり）
+   */
   chrome.browserAction.onClicked.addListener(function(tab) {
     loadJobcanPage()
     .done(function(data) {
@@ -98,14 +131,15 @@
       notify(data);
     })
     .fail(function(message) {
+      showErrorBadge();
       notifyError(message);
     });
   });
 
   chrome.alarms.onAlarm.addListener(function(alarm) {
-    console.log("alarm");
+    checkSilently();
   });
 
   chrome.alarms.create({ periodInMinutes: 30 });
-  loadJobcanPage()
+  checkSilently();
 })(jQuery);
