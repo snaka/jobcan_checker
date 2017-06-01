@@ -89,10 +89,7 @@
    * バッジの更新
    */
   function updateBadge(data) {
-    var totalCount = 0;
-    for (var status of data) {
-      totalCount = totalCount + status.count;
-    }
+    var totalCount = calcTotalCount(data);
     if (totalCount > 0) {
       chrome.browserAction.setBadgeText({ text: totalCount.toString() });
       chrome.browserAction.setBadgeBackgroundColor({ color: "#ff0000" });
@@ -103,18 +100,29 @@
     }
   }
 
+  function calcTotalCount(data) {
+    var totalCount = 0;
+    for (var status of data) {
+      totalCount = totalCount + status.count;
+    }
+    return totalCount;
+  }
+
   function showErrorBadge() {
     chrome.browserAction.setBadgeText({ text: "?" });
     chrome.browserAction.setBadgeBackgroundColor({ color: "#aaaaaa" });
   }
 
   /*
-   * 通知なしでチェック
+   * 打刻エラー以外は通知なしでチェック
    */
   function checkSilently() {
     loadJobcanPage()
     .done(function(data) {
       updateBadge(data);
+      if (calcTotalCount(data) > 0) {
+        notify(data);
+      }
     })
     .fail(function(message) {
       showErrorBadge();

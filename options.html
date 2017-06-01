@@ -1,28 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
   <head>
+    <meta charset="UTF-8">
     <title>ジョブカンチェッカー</title>
     <style>
       body: {
         padding: 10px;
       }
-      div#homepage {
-        padding: 10px;
+      div.item input[type=text]
+      {
+        width: 200px;
       }
     </style>
   </head>
   <body>
-    <div id="homepage">
-      <span>
-        source: <a href="https://github.com/snaka/jobcan_checker">snaka/jobcan_checker</a>
-        v0.1
-      </span>
+    <div id="account">
+      <div class="item-label">
+        会社ID
+      </div>
+      <div class="item">
+        <input type="text" id="company-id">
+      </div>
+      <div class="item-label">
+        メールアドレス/スタッフコード
+      </div>
+      <div class="item">
+        <input type="text" id="email">
+      </div>
+      <div class="item-label">
+        パスワード
+      </div>
+      <div class="item">
+        <input type="password" id="password">
+      </div>
+      <div class="item">
+        <button id="save">保存</button>
+      </div>
+      <div id="status">
+      </div>
     </div>
     <div id="credit-container">
       <hr/>
       <span id="credit">
+        <span id="homepage">
+          source: <a href="https://github.com/snaka/jobcan_checker">snaka/jobcan_checker</a>
+          v0.1
+        </span>
+        <br />
         <a href="https://www.iconfinder.com/icons/171279/alarm_bell_clock_time_icon#size=48">Icon</a> by <a href="https://www.iconfinder.com/tmthymllr">Timothy Miller</a> / <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>
       </span>
     </div>
+    <script src="lib/jquery-3.2.1.min.js"></script>
+    <script src="options.js"></script>
   </body>
 </html>

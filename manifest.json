@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "ジョブカンチェッカー",
   "homepage_url": "https://github.com/snaka/jobcan_checker",
-  "version": "0.1",
+  "version": "0.2",
   "description": "Observe Jobcan status",
   "icons": { "48": "images/icon.png" },
   "browser_action": {
@@ -17,6 +17,7 @@
     "alarms",
     "notifications",
     "tabs",
+    "storage",
     "https://ssl.jobcan.jp/"
   ],
   "options_ui": {
