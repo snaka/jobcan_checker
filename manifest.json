@@ -1,13 +1,13 @@
 {
   "manifest_version": 2,
-  "name": "ジョブカンチェッカー",
+  "name": "ジョブカンアラート",
   "homepage_url": "https://chrome.google.com/webstore/detail/%E3%82%B8%E3%83%A7%E3%83%96%E3%82%AB%E3%83%B3%E3%83%81%E3%82%A7%E3%83%83%E3%82%AB%E3%83%BC/chfgdccpmmgmamnjogpbajijchidapbg",
-  "version": "0.3",
+  "version": "0.3.2",
   "description": "ジョブカンを監視してエラーを通知【非公式】",
   "icons": { "48": "images/icon.png" },
   "browser_action": {
     "default_icon": "images/icon.png",
-    "default_title": "Jobcanチェッカー"
+    "default_title": "ジョブカンアラート"
   },
   "background": {
     "scripts": ["lib/jquery-3.2.1.min.js", "background.js"],
