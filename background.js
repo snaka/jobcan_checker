@@ -54,9 +54,9 @@
       $.post(
         "https://ssl.jobcan.jp/login/pc-employee",
         {
-          client_id: companyId,
-          email: email,
-          password: password,
+          client_id: items.companyId,
+          email: items.email,
+          password: items.password,
           save_login_info: "1",
           url: "/employee",
           login_type: "1"
@@ -87,9 +87,6 @@
         buttons: [{ title: "ジョブカンを開く" }]
       }
     );
-    chrome.notifications.onButtonClicked.addListener(function() {
-      openJobcanPage();
-    });
   }
 
   /*
@@ -102,13 +99,9 @@
         iconUrl: "images/icon.png",
         title: "ジョブカン連携失敗",
         message: msg,
-        buttons: [{ title: "ジョブカンを開く" }]
+        buttons: [{ title: "オプションを開く" }]
       }
     );
-    chrome.notifications.onButtonClicked.addListener(function() {
-      chrome.notifications.clear("jobcanChecker.showError");
-      openJobcanPage();
-    });
   }
 
   function openJobcanPage() {
@@ -174,11 +167,29 @@
     });
   });
 
+  // 定期的にチェック
   chrome.alarms.onAlarm.addListener(function(alarm) {
-    checkSilently();
+    login()
+    .then(checkSilently);
   });
+  console.log("add onAlerm listener")
 
   chrome.alarms.create({ periodInMinutes: 30 });
+
+  // 通知のイベント
+  chrome.notifications.onButtonClicked.addListener(function(notificationId) {
+    switch(notificationId) {
+      case "jobcanChecker.showStatus":
+        chrome.notifications.clear("jobcanChecker.showStatus");
+        openJobcanPage();
+        break;
+
+      case "jobcanChecker.showError":
+        chrome.notifications.clear("jobcanChecker.showError");
+        chrome.runtime.openOptionPage();
+        break;
+    }
+  });
 
   // ログインしてチェック
   login()
