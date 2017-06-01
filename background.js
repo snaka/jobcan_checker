@@ -40,6 +40,36 @@
   }
 
   /*
+   * ログイン
+   */
+  function login() {
+    var dInner = new $.Deferred();
+
+    // ログイン情報を取得してログインフォームを送信
+    chrome.storage.sync.get({
+      companyId: "",
+      email: "",
+      password: ""
+    }, function(items) {
+      $.post(
+        "https://ssl.jobcan.jp/login/pc-employee",
+        {
+          client_id: companyId,
+          email: email,
+          password: password,
+          save_login_info: "1",
+          url: "/employee",
+          login_type: "1"
+        },
+        function(data) {
+          dInner.resolve();
+        }
+      );
+    });
+    return dInner.promise();
+  }
+
+  /*
    * デスクトップ通知
    */
   function notify(data) {
@@ -149,5 +179,8 @@
   });
 
   chrome.alarms.create({ periodInMinutes: 30 });
-  checkSilently();
+
+  // ログインしてチェック
+  login()
+  .then(checkSilently);
 })(jQuery);
