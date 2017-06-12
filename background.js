@@ -186,7 +186,7 @@
 
       case "jobcanChecker.showError":
         chrome.notifications.clear("jobcanChecker.showError");
-        chrome.runtime.openOptionPage();
+        chrome.runtime.openOptionsPage();
         break;
     }
   });
