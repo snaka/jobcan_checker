@@ -1,72 +1,101 @@
 (function ($) {
-  function loadJobcanPage() {
-    console.log("loadJobcanPage");
-
-    var dInner = new $.Deferred();
-
-    var promise = $.ajax({
-      type: "GET",
-      url: "https://ssl.jobcan.jp/employee/index/load-top-informations"
-    });
-    promise.done(function(data) {
-      if (!isLogin(data)) {
-        dInner.reject("ジョブカンにログインしてください");
-        return;
-      }
-      html = $.parseHTML($.trim(data.tpl));
-      statusTable = html[2];
-      statuses = [];
-      $(statusTable).find("tr").each(function(i) {
-        var statusName = $(this).children("th").text();
-        var statusCountText = $(this).children("td").text();
-        var statusCount = Number.parseInt(statusCountText);
-        console.log(statusName + ":" + statusCount);
-        statuses.push({ title: statusName, count: statusCount });
-      });
-      // for test
-      // statuses = [{title: "status1", count: 1}];
-      dInner.resolve(statuses);
-    });
-
-    return dInner.promise();
-  }
-
-  function isLogin(data) {
-    // ログイン済みであればjsonが返ってくる
-    if (typeof data === "object") {
-      return true;
+  class Jobcan {
+    constructor() {
+      console.log("Jobcan constructor");
+      // do something
+      this.loadJobcanPage = this.loadJobcanPage.bind(this);
+      this.isLogin = this.isLogin.bind(this);
+      this.login = this.login.bind(this);
+      this.openJobcanPage = this.openJobcanPage.bind(this);
     }
-    return false;
-  }
 
-  /*
-   * ログイン
-   */
-  function login() {
-    var dInner = new $.Deferred();
+    /*
+     * ジョブカンページ取得
+     */
+    loadJobcanPage() {
+      console.log("loadJobcanPage");
 
-    // ログイン情報を取得してログインフォームを送信
-    chrome.storage.sync.get({
-      companyId: "",
-      email: "",
-      password: ""
-    }, function(items) {
-      $.post(
-        "https://ssl.jobcan.jp/login/pc-employee",
-        {
-          client_id: items.companyId,
-          email: items.email,
-          password: items.password,
-          save_login_info: "1",
-          url: "/employee",
-          login_type: "1"
-        },
-        function(data) {
-          dInner.resolve();
+      let dInner = new $.Deferred();
+
+      let promise = $.ajax({
+        type: "GET",
+        url: "https://ssl.jobcan.jp/employee/index/load-top-informations"
+      });
+      promise.done((data) => {
+        if (!this.isLogin(data)) {
+          // dInner.reject("ジョブカンにログインしてください");
+          this
+            .login()
+            .then(() => dInner.resolve())
+            .catch(() => dInner.reject("ログインできませんでした"));
+          return;
         }
-      );
-    });
-    return dInner.promise();
+        let html = $.parseHTML($.trim(data.tpl));
+        let statusTable = html[2];
+        let statuses = [];
+        statusTable.querySelectorAll("tr").forEach((tr) => {
+          let statusName = $(tr).children("th").text();
+          let statusCountText = $(tr).children("td").text();
+          let statusCount = Number.parseInt(statusCountText);
+          console.log(statusName + ":" + statusCount);
+          statuses.push({ title: statusName, count: statusCount });
+        });
+        // for test
+        // statuses = [{title: "status1", count: 1}];
+        dInner.resolve(statuses);
+      });
+
+      return dInner.promise();
+    }
+
+    /*
+     * ログイン
+     */
+    login() {
+      console.log("jobcan login");
+      var dInner = new $.Deferred();
+
+      // ログイン情報を取得してログインフォームを送信
+      chrome.storage.sync.get({
+        companyId: "",
+        email: "",
+        password: ""
+      }, (items) => {
+        $.post(
+          "https://ssl.jobcan.jp/login/pc-employee",
+          {
+            client_id: items.companyId,
+            email: items.email,
+            password: items.password,
+            save_login_info: "1",
+            url: "/employee",
+            login_type: "1"
+          },
+          (data) => {
+            dInner.resolve();
+          }
+        );
+      });
+      return dInner.promise();
+    }
+
+    /*
+     * ジョブカンページをタブで開く
+     */
+    openJobcanPage() {
+      chrome.tabs.create({ url: "https://ssl.jobcan.jp/employee" });
+    }
+
+    /*
+     * ログインしているか?
+     */
+    isLogin(data) {
+      // ログイン済みであればjsonが返ってくる
+      if (typeof data === "object") {
+        return true;
+      }
+      return false;
+    }
   }
 
   /*
@@ -74,7 +103,8 @@
    */
   function notify(data) {
     // data: [ { title: "xxxx", count: 0 }, { title: "yyyy", count: 1 } ]
-    var notificationMessage = data.map(function(x) {
+    console.log("notify data :" + data);
+    var notificationMessage = data.map((x) => {
       return x.title + ":" + x.count;
     }).join("\n");
 
@@ -99,13 +129,9 @@
         iconUrl: "images/icon.png",
         title: "ジョブカン連携失敗",
         message: msg,
-        buttons: [{ title: "オプションを開く" }]
+        buttons: [{ title: "オプションを開く" }, { title: "ジョブカンを開く" }]
       }
     );
-  }
-
-  function openJobcanPage() {
-    chrome.tabs.create({ url: "https://ssl.jobcan.jp/employee" });
   }
 
   /*
@@ -140,58 +166,76 @@
    * 打刻エラー以外は通知なしでチェック
    */
   function checkSilently() {
-    loadJobcanPage()
-    .done(function(data) {
-      updateBadge(data);
-      if (calcTotalCount(data) > 0) {
-        notify(data);
-      }
-    })
-    .fail(function(message) {
-      showErrorBadge();
-    });
+    console.log("check silently");
+    jobcan
+      .loadJobcanPage()
+      .done((data) => {
+        updateBadge(data);
+        if (calcTotalCount(data) > 0) {
+          notify(data);
+        }
+      })
+      .fail((message) => {
+        showErrorBadge();
+      });
   }
 
   /*
    * 強制的にチェック（通知あり）
    */
-  chrome.browserAction.onClicked.addListener(function(tab) {
-    loadJobcanPage()
-    .done(function(data) {
-      updateBadge(data);
-      notify(data);
-    })
-    .fail(function(message) {
-      showErrorBadge();
-      notifyError(message);
-    });
+  chrome.browserAction.onClicked.addListener((tab) => {
+    jobcan
+      .loadJobcanPage()
+      .done((data) => {
+        updateBadge(data);
+        notify(data);
+      })
+      .fail((message) => {
+        showErrorBadge();
+        notifyError(message);
+      });
   });
 
   // 定期的にチェック
-  chrome.alarms.onAlarm.addListener(function(alarm) {
-    login()
-    .then(checkSilently);
+  chrome.alarms.onAlarm.addListener((alarm) => {
+    jobcan
+      .login()
+      .then(checkSilently);
   });
   console.log("add onAlerm listener")
 
   chrome.alarms.create({ periodInMinutes: 30 });
 
   // 通知のイベント
-  chrome.notifications.onButtonClicked.addListener(function(notificationId) {
+  chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
     switch(notificationId) {
       case "jobcanChecker.showStatus":
         chrome.notifications.clear("jobcanChecker.showStatus");
-        openJobcanPage();
+        jobcan.openJobcanPage();
         break;
 
       case "jobcanChecker.showError":
         chrome.notifications.clear("jobcanChecker.showError");
-        chrome.runtime.openOptionsPage();
+        switch(buttonIndex) {
+          case 0:
+            // オプションを開く
+            chrome.runtime.openOptionsPage();
+            break;
+          case 1:
+            // ジョブカンを開く
+            jobcan.openJobcanPage();
+            break;
+        }
         break;
     }
   });
 
+  // ジョブカンインスタンス作成
+  let jobcan = new Jobcan();
+
   // ログインしてチェック
-  login()
-  .then(checkSilently);
+  jobcan
+    .login()
+    .then(checkSilently);
+
 })(jQuery);
