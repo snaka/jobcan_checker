@@ -10,34 +10,50 @@
     loadJobcanPage() {
       console.log("loadJobcanPage");
 
-      return new Promise((resolve, reject) => {
+      let promise = Promise.resolve(
         $.ajax({
           type: "GET",
           url: "https://ssl.jobcan.jp/employee/index/load-top-informations"
-        }).done((data) => {
-          if (!this.isLogin(data)) {
-            // dInner.reject("ジョブカンにログインしてください");
-            this
-              .login()
-              .then(() => resolve())
-              .catch(() => reject("ログインできませんでした"));
-            return;
-          }
-          let html = $.parseHTML($.trim(data.tpl));
-          let statusTable = html[2];
-          let statuses = [];
-          statusTable.querySelectorAll("tr").forEach((tr) => {
-            let statusName = $(tr).children("th").text();
-            let statusCountText = $(tr).children("td").text();
-            let statusCount = Number.parseInt(statusCountText);
-            console.log(statusName + ":" + statusCount);
-            statuses.push({ title: statusName, count: statusCount });
-          });
-          // for test
-          // statuses = [{title: "status1", count: 1}];
-          resolve(statuses);
+        })
+      ); 
+      return promise.then((data) => {
+        if (!this.isLogin(data)) {
+          // dInner.reject("ジョブカンにログインしてください");
+          this
+            .login()
+            .then(() => Promise.resolve({}))
+            .catch(() => Promise.reject("ログインできませんでした"));
+          return;
+        }
+        let html = $.parseHTML($.trim(data.tpl));
+        let statusTable = html[2];
+        let statuses = [];
+        statusTable.querySelectorAll("tr").forEach((tr) => {
+          let statusName = $(tr).children("th").text();
+          let statusCountText = $(tr).children("td").text();
+          let statusCount = Number.parseInt(statusCountText);
+          console.log(statusName + ":" + statusCount);
+          statuses.push({ title: statusName, count: statusCount });
         });
+        // for test
+        // statuses = [{title: "status1", count: 1}];
+        return statuses;
       });
+    }
+
+    /*
+     * ログイン情報取得
+     */
+    _getLoginInfo() {
+      return new Promise((resolve, reject) => {
+        chrome.storage.sync.get({
+          companyId: "",
+          email: "",
+          password: ""
+        }, (items) => {
+          resolve(items);
+        });
+      }).catch(() => console.log("get login information failed."));
     }
 
     /*
@@ -45,29 +61,17 @@
      */
     login() {
       console.log("jobcan login");
-      // ログイン情報を取得してログインフォームを送信
-      return new Promise((resolve, reject) => {
-        chrome.storage.sync.get({
-          companyId: "",
-          email: "",
-          password: ""
-        }, (items) => {
-          $.post(
-            "https://ssl.jobcan.jp/login/pc-employee",
-            {
-              client_id: items.companyId,
-              email: items.email,
-              password: items.password,
-              save_login_info: "1",
-              url: "/employee",
-              login_type: "1"
-            },
-            (data) => {
-              resolve();
-            }
-          );
+
+      return this._getLoginInfo().then((loginInfo) => {
+        $.post("https://ssl.jobcan.jp/login/pc-employee", {
+          client_id: loginInfo.companyId,
+          email: loginInfo.email,
+          password: loginInfo.password,
+          save_login_info: "1",
+          url: "/employee",
+          login_type: "1"
         });
-      });
+      }).catch(() => console.log("login failed."));
     }
 
     /*
