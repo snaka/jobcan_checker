@@ -206,7 +206,7 @@
   chrome.alarms.onAlarm.addListener((alarm) => {
     checkSilently();
   });
-  chrome.alarms.create({ periodInMinutes: 2 });
+  chrome.alarms.create({ periodInMinutes: 30 });
 
   // 通知のイベント
   chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
