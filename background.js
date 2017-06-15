@@ -5,7 +5,27 @@
     }
 
     /*
+     * ログイン
+     */
+    login() {
+      console.log("jobcan login");
+
+      return this._getLoginInfo().then((loginInfo) => {
+        return $.post("https://ssl.jobcan.jp/login/pc-employee", {
+          client_id: loginInfo.companyId,
+          email: loginInfo.email,
+          password: loginInfo.password,
+          save_login_info: "1",
+          url: "/employee",
+          login_type: "1"
+        });
+      }).catch(() => console.log("login failed."));
+    }
+
+    /*
      * ジョブカンページ取得
+     *
+     * @return 
      */
     loadJobcanPage() {
       console.log("loadJobcanPage");
@@ -17,6 +37,8 @@
         })
       ); 
       return promise.then((data) => {
+        console.log(data);
+        /*
         if (!this.isLogin(data)) {
           // dInner.reject("ジョブカンにログインしてください");
           this
@@ -25,9 +47,14 @@
             .catch(() => Promise.reject("ログインできませんでした"));
           return;
         }
+        */
         let html = $.parseHTML($.trim(data.tpl));
         let statusTable = html[2];
         let statuses = [];
+        if (typeof statusTable == 'undefined') {
+          return Promise.reject(new Error("情報が取得できませんでした"))
+        }
+        console.log("statusTable: " + statusTable);
         statusTable.querySelectorAll("tr").forEach((tr) => {
           let statusName = $(tr).children("th").text();
           let statusCountText = $(tr).children("td").text();
@@ -54,24 +81,6 @@
           resolve(items);
         });
       }).catch(() => console.log("get login information failed."));
-    }
-
-    /*
-     * ログイン
-     */
-    login() {
-      console.log("jobcan login");
-
-      return this._getLoginInfo().then((loginInfo) => {
-        $.post("https://ssl.jobcan.jp/login/pc-employee", {
-          client_id: loginInfo.companyId,
-          email: loginInfo.email,
-          password: loginInfo.password,
-          save_login_info: "1",
-          url: "/employee",
-          login_type: "1"
-        });
-      }).catch(() => console.log("login failed."));
     }
 
     /*
@@ -163,14 +172,15 @@
   function checkSilently() {
     console.log("check silently");
     jobcan
-      .loadJobcanPage()
+      .login()
+      .then(jobcan.loadJobcanPage)
       .then((data) => {
         updateBadge(data);
         if (calcTotalCount(data) > 0) {
           notify(data);
         }
       })
-      .catch((message) => {
+      .catch(() => {
         showErrorBadge();
       });
   }
@@ -180,22 +190,23 @@
    */
   chrome.browserAction.onClicked.addListener((tab) => {
     jobcan
-      .loadJobcanPage()
+      .login()
+      .then(jobcan.loadJobcanPage)
       .then((data) => {
         updateBadge(data);
         notify(data);
       })
-      .catch((message) => {
+      .catch((err) => {
         showErrorBadge();
-        notifyError(message);
+        notifyError(err.message);
       });
   });
 
   // 定期的にチェック
   chrome.alarms.onAlarm.addListener((alarm) => {
-    jobcan.login().then(checkSilently);
+    checkSilently();
   });
-  chrome.alarms.create({ periodInMinutes: 60 });
+  chrome.alarms.create({ periodInMinutes: 2 });
 
   // 通知のイベント
   chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
@@ -225,8 +236,6 @@
   let jobcan = new Jobcan();
 
   // ログインしてチェック
-  jobcan
-    .login()
-    .then(checkSilently);
+  checkSilently();
 
 })(jQuery);
