@@ -189,6 +189,8 @@
    * 強制的にチェック（通知あり）
    */
   chrome.browserAction.onClicked.addListener((tab) => {
+    chrome.notifications.clear("jobcanChecker.showStatus");
+    chrome.notifications.clear("jobcanChecker.showError");
     jobcan
       .login()
       .then(jobcan.loadJobcanPage)
